@@ -1,0 +1,9 @@
+<h2>Добро пожаловать, {{ user.username }}!</h2>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">Нажми меня</button>
+</form>
+{% if message %}
+<p>{{ message }}</p>
+{% endif %}
+<a href="{% url 'logout' %}">Выйти</a>

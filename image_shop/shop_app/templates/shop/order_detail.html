@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Заказ #{{ order.id }}</h1>
+
+<div class="order-status">
+    <p><strong>Статус:</strong> {{ order.get_status_display }}</p>
+    <p><strong>Дата:</strong> {{ order.created_at|date:"d.m.Y H:i" }}</p>
+    <p><strong>Адрес:</strong> {{ order.address }}</p>
+</div>
+
+<div class="order-items">
+    <h3>Состав заказа:</h3>
+    {% for item in order.items.all %}
+    <div class="order-item">
+        <img src="{{ item.artwork.image.url }}" width="80">
+        <div class="item-info">
+            <h4>{{ item.artwork.title }}</h4>
+            <p>{{ item.artwork.artist }}</p>
+            <p>{{ item.quantity }} × {{ item.price }} руб.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="order-total">
+    <h3>Итого: {{ order.total_price }} руб.</h3>
+</div>
+
+<a href="{% url 'order_history' %}" class="back-link">← Назад к истории заказов</a>
+{% endblock %}

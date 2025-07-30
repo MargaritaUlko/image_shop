@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="artwork-detail">
+    <div class="artwork-image">
+        <img src="{{ artwork.image.url }}" alt="{{ artwork.title }}">
+    </div>
+    <div class="artwork-info">
+        <h1>{{ artwork.title }}</h1>
+        <p class="artist">Художник: {{ artwork.artist }}</p>
+        <p class="price">{{ artwork.price }} руб.</p>
+        <p class="description">{{ artwork.description }}</p>
+        
+        <!-- Система лайков/дизлайков -->
+        <div class="feedback-actions" style="margin: 20px 0;">
+            <form action="{% url 'artwork_recommendations' %}" method="get" style="display: inline-block;">
+                <input type="hidden" name="like" value="{{ artwork.id }}">
+                <button type="submit" class="like-btn" style="padding: 8px 15px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    👍 Нравится
+                </button>
+            </form>
+            
+            <form action="{% url 'artwork_recommendations' %}" method="get" style="display: inline-block; margin-left: 10px;">
+                <input type="hidden" name="dislike" value="{{ artwork.id }}">
+                <button type="submit" class="dislike-btn" style="padding: 8px 15px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    👎 Не нравится
+                </button>
+            </form>
+            
+            <a href="{% url 'artwork_recommendations' %}" style="margin-left: 15px; padding: 8px 15px; background: #2196F3; color: white; text-decoration: none; border-radius: 4px;">
+                Посмотреть рекомендации
+            </a>
+        </div>
+        
+        {% if user.is_authenticated %}
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Добавить в корзину</button>
+        </form>
+        {% else %}
+        <p>Чтобы добавить в корзину, <a href="{% url 'login' %}">войдите</a> или <a href="{% url 'register' %}">зарегистрируйтесь</a></p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Стили для кнопок -->
+<style>
+    .like-btn:hover {
+        background: #45a049 !important;
+    }
+    .dislike-btn:hover {
+        background: #d32f2f !important;
+    }
+    .feedback-actions {
+        padding: 15px;
+        background: #f5f5f5;
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Галерея картин</h1>
+
+<div class="artworks">
+    {% for artwork in artworks %}
+    <div class="artwork-card">
+        <a href="{% url 'artwork_detail' artwork.id %}">
+            <img src="{{ artwork.image.url }}" alt="{{ artwork.title }}">
+            <h3>{{ artwork.title }}</h3>
+            <p>Художник: {{ artwork.artist }}</p>
+            <p class="price">{{ artwork.price }} руб.</p>
+            {% if item.similarity is not None %}
+            <div class="similarity-badge">
+                Схожесть: {{ item.similarity }}%
+            </div>
+            {% endif %}
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

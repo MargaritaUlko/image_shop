@@ -1,0 +1,35 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% load math_filters %}
+
+
+
+{% block content %}
+<h1>Ваша корзина</h1>
+
+{% if cart.items.all %}
+<div class="cart-items">
+    {% for item in cart.items.all %}
+    <div class="cart-item">
+        <img src="{{ item.artwork.image.url }}" width="100">
+        <div class="item-info">
+            <h3>{{ item.artwork.title }}</h3>
+            <p>Художник: {{ item.artwork.artist }}</p>
+            <p>Цена: {{ item.artwork.price }} руб. × {{ item.quantity }} = {{ item.artwork.price|mul:item.quantity }} руб.</p>
+            <a href="{% url 'remove_from_cart' item.id %}" class="remove-btn">Удалить</a>
+        </div>
+    </div>
+    {% endfor %}
+    
+    <div class="cart-total">
+        <h3>Итого: {{ total }} руб.</h3>
+        <a href="{% url 'checkout' %}" class="checkout-btn">Оформить заказ</a>
+    </div>
+</div>
+{% else %}
+<p>Ваша корзина пуста</p>
+<a href="{% url 'artwork_list' %}" class="back-btn">Вернуться в галерею</a>
+{% endif %}
+{% endblock %}

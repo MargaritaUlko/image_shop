@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>История ваших заказов</h1>
+
+{% if orders %}
+<div class="orders-list">
+    {% for order in orders %}
+    <div class="order-card">
+        <div class="order-header">
+            <h3>Заказ #{{ order.id }}</h3>
+            <span class="status {{ order.status }}">{{ order.get_status_display }}</span>
+        </div>
+        <p class="order-date">{{ order.created_at|date:"d.m.Y H:i" }}</p>
+        <p class="order-total">{{ order.total_price }} руб.</p>
+        <a href="{% url 'order_detail' order.id %}" class="details-link">Подробнее</a>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p>У вас пока нет заказов</p>
+<a href="{% url 'artwork_list' %}" class="back-link">Перейти к покупкам</a>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Персональные рекомендации | Галерея</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin: 30px 0;
+        }
+        
+        .recommendation-header {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .feedback-message {
+            text-align: center;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .recommendation-explanation {
+            background-color: #f0f7ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .recommendation-explanation ul {
+            padding-left: 20px;
+            list-style-type: none;
+        }
+        
+        .recommendation-explanation li {
+            margin-bottom: 8px;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        .recommendation-explanation li:before {
+            content: "✓";
+            color: #4CAF50;
+            position: absolute;
+            left: 0;
+        }
+        
+        .artwork-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            padding: 10px;
+        }
+        
+        .artwork-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .artwork-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .artwork-card img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .artwork-info {
+            padding: 18px;
+        }
+        
+        .artwork-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+            color: #2c3e50;
+        }
+        
+        .artwork-artist {
+            color: #7f8c8d;
+            margin-bottom: 5px;
+            font-size: 0.95em;
+        }
+        
+        .artwork-price {
+            color: #e53935;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin: 12px 0;
+        }
+        
+        .similarity-badge {
+            display: inline-block;
+            background: #4CAF50;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            margin-bottom: 10px;
+        }
+        
+        .feedback-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+        
+        .like-btn, .dislike-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.2s;
+        }
+        
+        .like-btn {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .like-btn:hover {
+            background: #3e8e41;
+        }
+        
+        .dislike-btn {
+            background: #f44336;
+            color: white;
+        }
+        
+        .dislike-btn:hover {
+            background: #d32f2f;
+        }
+        
+        .details-btn {
+            padding: 8px 15px;
+            background: #2196F3;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        
+        .details-btn:hover {
+            background: #0b7dda;
+        }
+        
+        .no-recommendations {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="recommendation-header">
+        <h1>Ваши персональные рекомендации</h1>
+        
+        <div class="recommendation-explanation">
+            {% if liked_images %}
+                <p>Мы подобрали эти работы на основе ваших предпочтений:</p>
+                <ul>
+                    {% for art_id in liked_images %}
+                        {% with artwork=art_id|get_artwork %}
+                            <li>{{ artwork.title }} ({{ artwork.artist }})</li>
+                        {% endwith %}
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>Попробуйте поставить лайк понравившимся работам, чтобы получить более точные рекомендации!</p>
+            {% endif %}
+        </div>
+        
+        {% if liked_images or disliked_images %}
+        <div class="feedback-message">
+            Спасибо за ваши оценки! Мы учли ваши предпочтения при формировании рекомендаций.
+        </div>
+        {% endif %}
+    </div>
+    
+    {% if artworks %}
+    <div class="artwork-grid">
+        {% for artwork in artworks %}
+        <div class="artwork-card">
+            <img src="{{ artwork.image.url }}" alt="{{ artwork.title }}" loading="lazy">
+            <div class="artwork-info">
+                <div class="artwork-title">{{ artwork.title }}</div>
+                <div class="artwork-artist">{{ artwork.artist }}</div>
+                <div class="artwork-price">{{ artwork.price }} руб.</div>
+                
+                {% if artwork.similarity %}
+                <div class="similarity-badge">
+                    Схожесть: {{ artwork.similarity }}%
+                </div>
+                {% endif %}
+                
+                <div class="feedback-actions">
+                    <form action="{% url 'artwork_recommendations' %}" method="get">
+                        <input type="hidden" name="like" value="{{ artwork.id }}">
+                        {% for like in liked_images %}
+                            <input type="hidden" name="like" value="{{ like }}">
+                        {% endfor %}
+                        {% for dislike in disliked_images %}
+                            <input type="hidden" name="dislike" value="{{ dislike }}">
+                        {% endfor %}
+                        <button type="submit" class="like-btn" title="Нравится">👍</button>
+                    </form>
+                    
+                    <a href="{% url 'artwork_detail' artwork.id %}" class="details-btn">
+                        Подробнее
+                    </a>
+                    
+                    <form action="{% url 'artwork_recommendations' %}" method="get">
+                        <input type="hidden" name="dislike" value="{{ artwork.id }}">
+                        {% for like in liked_images %}
+                            <input type="hidden" name="like" value="{{ like }}">
+                        {% endfor %}
+                        {% for dislike in disliked_images %}
+                            <input type="hidden" name="dislike" value="{{ dislike }}">
+                        {% endfor %}
+                        <button type="submit" class="dislike-btn" title="Не нравится">👎</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="no-recommendations">
+        <p>На данный момент у нас нет рекомендаций для вас.</p>
+        <p>Попробуйте оценить несколько работ, чтобы мы могли подобрать что-то под ваш вкус!</p>
+    </div>
+    {% endif %}
+</body>
+</html>

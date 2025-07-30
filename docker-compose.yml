@@ -1,0 +1,72 @@
+
+services:
+  web:
+    build: .
+    command: sh -c "python /code/image_shop/manage.py makemigrations && 
+                python /code/image_shop/manage.py migrate && 
+                python /code/image_shop/manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=image_shop.settings
+    depends_on:
+      - db
+      - redis
+      - rabbitmq
+
+
+
+
+  db:
+    image: postgres:14
+    environment:
+      - POSTGRES_DB=db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:3.11-management  # Убрали -alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 30s
+      retries: 15
+      start_period: 60s
+    
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+  redis:
+    image: redis:6
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  consumer:
+    build: .
+    command: sh -c "sleep 10 && python /code/image_shop/manage.py service"
+    volumes:
+      - .:/code
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data: 
