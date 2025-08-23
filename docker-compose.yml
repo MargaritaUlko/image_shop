@@ -1,4 +1,6 @@
 
+version: '3.8'
+
 services:
   web:
     build: .
@@ -11,13 +13,26 @@ services:
       - "8000:8000"
     environment:
       - DJANGO_SETTINGS_MODULE=image_shop.settings
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - REDIS_URL=redis://redis:6379/1
     depends_on:
       - db
       - redis
-      - rabbitmq
-
-
-
+    
+  # Добавляем Celery worker
+  celery-worker:
+    build: .
+    command: sh -c "sleep 15 && celery -A image_shop worker --loglevel=info"
+    volumes:
+      - .:/code
+    environment:
+      - DJANGO_SETTINGS_MODULE=image_shop.settings  
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - REDIS_URL=redis://redis:6379/1
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
 
   db:
     image: postgres:14
@@ -30,43 +45,40 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  rabbitmq:
-    image: rabbitmq:3.11-management  # Убрали -alpine
-    environment:
-      RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: admin123
-    healthcheck:
-      test: ["CMD", "rabbitmqctl", "status"]
-      interval: 10s
-      timeout: 30s
-      retries: 15
-      start_period: 60s
-    
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
   redis:
     image: redis:6
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
 
-  consumer:
-    build: .
-    command: sh -c "sleep 10 && python /code/image_shop/manage.py service"
-    volumes:
-      - .:/code
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    restart: unless-stopped
+  # Убираем RabbitMQ, т.к. используем Redis
+  # rabbitmq:
+  #   image: rabbitmq:3.11-management
+  #   environment:
+  #     RABBITMQ_DEFAULT_USER: admin
+  #     RABBITMQ_DEFAULT_PASS: admin123
+  #   ports:
+  #     - "5672:5672"
+  #     - "15672:15672"
+  #   volumes:
+  #     - rabbitmq_data:/var/lib/rabbitmq
+
+  # consumer:
+  #   build: .
+  #   command: sh -c "sleep 10 && python /code/image_shop/manage.py service"
+  #   volumes:
+  #     - .:/code
+  #   depends_on:
+  #     - redis
+  #   restart: unless-stopped
 
 volumes:
   postgres_data:
   redis_data:
-  rabbitmq_data: 
+  # rabbitmq_data:

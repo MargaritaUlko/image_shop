@@ -14,7 +14,7 @@ class ArtworkRecommender:
         self.features_cache_file = os.path.join(os.path.dirname(model_path), "artwork_features_cache.joblib")
         self.artwork_features = self._load_features_cache()
         self.artwork_ids = list(self.artwork_features.keys()) if self.artwork_features else []
-        self.use_cache = use_cache  # Добавлено
+        self.use_cache = use_cache
         self.last_query_vector = None
 
     def _load_features_cache(self):
@@ -28,6 +28,13 @@ class ArtworkRecommender:
     def _save_features_cache(self):
         joblib.dump(self.artwork_features, self.features_cache_file)
 
+    def _normalize(self, vector):
+        """Нормализует вектор по L2 норме"""
+        norm = np.linalg.norm(vector)
+        if norm < 1e-6:  # Защита от деления на ноль
+            return vector
+        return vector / norm
+
     def update_artworks(self, artworks):
         new_artworks = [art for art in artworks if art.id not in self.artwork_features]
 
@@ -40,9 +47,13 @@ class ArtworkRecommender:
                 img = Image.open(artwork.image.path).convert("RGB")
                 inputs = self.processor(images=img, return_tensors="pt")
                 features = self.model.get_image_features(**inputs).detach().numpy().flatten()
+                
                 if np.std(features) < 1e-6:
                     print(f"⚠️ WARNING: Artwork {artwork.id} has nearly zero features, skipping.")
                     continue
+                
+                # Нормализация вектора перед сохранением
+                features = self._normalize(features)
                 self.artwork_features[artwork.id] = features
             except Exception as e:
                 print(f"Error processing artwork {artwork.id}: {str(e)}")
@@ -61,10 +72,13 @@ class ArtworkRecommender:
             return None
 
         pos_query = np.mean(pos_vectors, axis=0)
+        pos_query = self._normalize(pos_query)  # Нормализация среднего вектора лайков
 
         if neg_vectors:
             neg_query = np.mean(neg_vectors, axis=0)
+            neg_query = self._normalize(neg_query)  # Нормализация среднего вектора дизлайков
             final_query = pos_query - 0.5 * neg_query
+            final_query = self._normalize(final_query)  # Нормализация итогового вектора
             self.last_query_vector = final_query
             print("✅ Final query vector (with negatives):", final_query[:5])
             return final_query
@@ -95,17 +109,20 @@ class ArtworkRecommender:
                 cache.set(cache_key, default_recs, 60 * 15)
             return default_recs
 
-        all_ids = np.array(self.artwork_ids)
+        all_ids = np.array([art_id for art_id in self.artwork_ids if art_id not in liked_ids and art_id not in disliked_ids])
+    
+    # Если нет картин для рекомендаций (все уже лайкнуты)
+        if len(all_ids) == 0:
+            return []
         features_matrix = np.array([self.artwork_features[art_id] for art_id in all_ids])
+        
+        # Нормализация не требуется здесь, так как:
+        # 1. Все artwork_features уже нормализованы в update_artworks()
+        # 2. query_vector нормализован в _compute_query_vector()
         similarities = cosine_similarity([query_vector], features_matrix)[0]
 
-        selected = set(liked_ids + disliked_ids)
-        mask = np.array([art_id not in selected for art_id in all_ids])
-        filtered_ids = all_ids[mask]
-        filtered_similarities = similarities[mask]
-
-        top_indices = np.argpartition(-filtered_similarities, top_k)[:top_k]
-        recommended_ids = filtered_ids[top_indices].tolist()
+        top_indices = np.argpartition(-similarities, top_k)[:top_k]
+        recommended_ids = all_ids[top_indices].tolist()
 
         if self.use_cache:
             cache.set(cache_key, recommended_ids, 60 * 15)

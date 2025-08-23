@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Личный кабинет</h1>
+
+<div class="profile-info">
+    <p><strong>Имя:</strong> {{ user.first_name }}</p>
+    <p><strong>Фамилия:</strong> {{ user.last_name }}</p>
+    <p><strong>Email:</strong> {{ user.email }}</p>
+</div>
+
+<hr>
+
+<h2>Мои картины</h2>
+{% if artworks %}
+    <ul>
+        {% for artwork in artworks %}
+            <li>
+                <strong>{{ artwork.title }}</strong><br>
+                <img src="{{ artwork.image.url }}" alt="{{ artwork.title }}" width="200">
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>У вас пока нет картин.</p>
+{% endif %}
+
+{% endblock %}

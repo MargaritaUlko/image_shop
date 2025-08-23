@@ -1,9 +1,10 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
     <title>Персональные рекомендации | Галерея</title>
+
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -176,9 +177,9 @@
             color: #7f8c8d;
             font-size: 1.1em;
         }
-    </style>
+    </style> 
 </head>
-<body>
+
     <div class="recommendation-header">
         <h1>Ваши персональные рекомендации</h1>
         
@@ -257,5 +258,4 @@
         <p>Попробуйте оценить несколько работ, чтобы мы могли подобрать что-то под ваш вкус!</p>
     </div>
     {% endif %}
-</body>
-</html>
+{% endblock %}

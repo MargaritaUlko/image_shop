@@ -7,17 +7,37 @@
     {% for artwork in artworks %}
     <div class="artwork-card">
         <a href="{% url 'artwork_detail' artwork.id %}">
-            <img src="{{ artwork.image.url }}" alt="{{ artwork.title }}">
+            <div class="artwork-image-container">
+                <img src="{{ artwork.image.url }}" alt="{{ artwork.title }}" class="artwork-image">
+            </div>
             <h3>{{ artwork.title }}</h3>
             <p>Художник: {{ artwork.artist }}</p>
             <p class="price">{{ artwork.price }} руб.</p>
-            {% if item.similarity is not None %}
+            <!-- {% if artwork.similarity is not None %}
             <div class="similarity-badge">
-                Схожесть: {{ item.similarity }}%
+                Схожесть: {{ artwork.similarity }}%
             </div>
-            {% endif %}
+            {% endif %} -->
         </a>
     </div>
     {% endfor %}
+</div>
+
+<div class="pagination">
+    <span class="step-links">
+        {% if artworks.has_previous %}
+            <a href="?page=1">&laquo; первая</a>
+            <a href="?page={{ artworks.previous_page_number }}">предыдущая</a>
+        {% endif %}
+
+        <span class="current">
+            Страница {{ artworks.number }} из {{ artworks.paginator.num_pages }}.
+        </span>
+
+        {% if artworks.has_next %}
+            <a href="?page={{ artworks.next_page_number }}">следующая</a>
+            <a href="?page={{ artworks.paginator.num_pages }}">последняя &raquo;</a>
+        {% endif %}
+    </span>
 </div>
 {% endblock %}

@@ -122,8 +122,15 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 
+
+STATICFILES_DIRS = [
+    BASE_DIR / "static", 
+]
+
+# Каталог, куда соберутся все static-файлы при выполнении collectstatic (на продакшене)
+STATIC_ROOT = BASE_DIR / "staticfiles"
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -131,7 +138,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # settings.py
 RABBITMQ = {
-    'HOST': 'rabbitmq',  # Имя сервиса в docker-compose
+    'HOST': 'rabbitmq',  
     'PORT': 5672,
     'USER': 'admin',
     'PASSWORD': 'admin123',
@@ -141,9 +148,9 @@ RABBITMQ = {
         'PURCHASES': 'purchase_events'
     }
 }
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # React dev server
-]
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",  
+# ]
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -164,14 +171,35 @@ CORS_ALLOW_METHODS = [
     'POST',
     'PUT',
 ]
-CELERY_BROKER_URL = f"amqp://{RABBITMQ['USER']}:{RABBITMQ['PASSWORD']}@{RABBITMQ['HOST']}:{RABBITMQ['PORT']}/{RABBITMQ['VHOST']}"
+# CELERY_BROKER_URL = 'memory://'
+# CELERY_RESULT_BACKEND = 'cache+memory://'
+# CELERY_TASK_ALWAYS_EAGER = True  # Выполняем задачи синхронно в разработке
+# CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://redis:6379/0')  # Используем имя сервиса
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://redis:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': os.getenv('REDIS_URL', 'redis://redis:6379/1'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
+# CELERY_BROKER_URL = f"amqp://{RABBITMQ['USER']}:{RABBITMQ['PASSWORD']}@{RABBITMQ['HOST']}:{RABBITMQ['PORT']}/{RABBITMQ['VHOST']}"
 # CELERY_BROKER_URL = 'amqp://guest:guest@localhost:5672//'
 # RABBITMQ_QUEUES = {
 #     'USER_ACTIONS': 'user_actions',
 #     'PURCHASES': 'purchase_events'
 # }
 REDIS_BUFFER_CONFIG = {
-    'HOST': 'redis',  # Имя сервиса в docker-compose
+    'HOST': 'redis',  
     'PORT': 6379,
     'DB': 1,
     'BATCH_SIZE': 1000,
@@ -185,7 +213,7 @@ DATABASES = {
         'NAME': 'imageshop_db',
         'USER': 'postgres',
         'PASSWORD': '123',
-        'HOST': 'localhost',#'db',  # Имя сервиса в docker-compose
+        'HOST': 'db',#'db',  
         'PORT': '5432',
     }
 }
@@ -197,7 +225,16 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'button_page'
 LOGOUT_REDIRECT_URL = 'login'
 
-
+# CACHES = {
+#     "default": {
+#         "BACKEND": "django_redis.cache.RedisCache",
+#         "LOCATION": "redis://redis:6379/1",
+#         "OPTIONS": {
+#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+#         }
+#     }
+# }
 
 TIME_ZONE = 'Asia/Krasnoyarsk'  # Красноярск UTC+7
 USE_TZ = True 
+UNSPLASH_ACCESS_KEY = 'NRiKdGVok-10lnqqfkKRZKH8IjdHNHZmqOXw2bWaN_g'

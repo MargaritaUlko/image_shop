@@ -1,51 +1,151 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
 <div class="artwork-detail">
-    <div class="artwork-image">
+    <div class="artwork-image-container ">
         <img src="{{ artwork.image.url }}" alt="{{ artwork.title }}">
     </div>
-    <div class="artwork-info">
+    <div class="artwork-card">
         <h1>{{ artwork.title }}</h1>
         <p class="artist">Художник: {{ artwork.artist }}</p>
-        <p class="price">{{ artwork.price }} руб.</p>
-        <p class="description">{{ artwork.description }}</p>
-        
-        <!-- Система лайков/дизлайков -->
+        <p class="price">Цена: {{ artwork.price }} руб.</p>
+        <p class="description">Описание: {{ artwork.description }}</p>
+        <p class="description">Просмотры: {{ views }}</p>  Исправлено
         <div class="feedback-actions" style="margin: 20px 0;">
-            <form action="{% url 'artwork_recommendations' %}" method="get" style="display: inline-block;">
-                <input type="hidden" name="like" value="{{ artwork.id }}">
-                <button type="submit" class="like-btn" style="padding: 8px 15px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    👍 Нравится
-                </button>
-            </form>
+
+            <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer;" onclick="like('{{ artwork.id }}')">
+                <img id="like-icon" 
+                    src="{% if is_liked %}{% static 'img/full_heart.png' %}{% else %}{% static 'img/empty_heart.png' %}{% endif %}" 
+                    alt="Like" 
+                    style="width: 24px; height: 24px; margin-bottom: 5px;">
+                <span>Нравится</span>
+            </div>
             
-            <form action="{% url 'artwork_recommendations' %}" method="get" style="display: inline-block; margin-left: 10px;">
-                <input type="hidden" name="dislike" value="{{ artwork.id }}">
-                <button type="submit" class="dislike-btn" style="padding: 8px 15px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    👎 Не нравится
-                </button>
-            </form>
             
-            <a href="{% url 'artwork_recommendations' %}" style="margin-left: 15px; padding: 8px 15px; background: #2196F3; color: white; text-decoration: none; border-radius: 4px;">
-                Посмотреть рекомендации
-            </a>
+
         </div>
         
-        {% if user.is_authenticated %}
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Добавить в корзину</button>
-        </form>
+        {% if not in_cart %}
+            <button type="button" class="btn btn-primary" onclick="addToCart('{{ artwork.id }}')">Добавить в корзину</button>
         {% else %}
-        <p>Чтобы добавить в корзину, <a href="{% url 'login' %}">войдите</a> или <a href="{% url 'register' %}">зарегистрируйтесь</a></p>
+            <p class="artwork">Уже добавлено в корзину!</p>
         {% endif %}
+
+<script>
+
+
+
+<!-- !!!!Замените функцию addToCart в artwork_detail.html -->
+
+function addToCart(artworkId) {
+    if ("{{ user.is_authenticated }}" === "True") {
+        fetch('/artworks/' + artworkId + '/add-to-cart/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'artwork_id=' + encodeURIComponent(artworkId),
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('Товар добавлен в корзину!');
+                const button = document.querySelector('button[onclick*="addToCart"]');
+                if (button) {
+                    button.textContent = 'Добавлено в корзину!';
+                    button.disabled = true;
+                    button.style.opacity = '0.6';
+                }
+            } else {
+                alert('Ошибка при добавлении: ' + (data.message || 'Неизвестная ошибка'));
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Ошибка при добавлении в корзину');
+        });
+    } else {
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        let existing = cart.find(item => item.id == artworkId);
+        
+        if (existing) {
+            existing.quantity += 1;
+            alert(`Количество товара увеличено! Теперь в корзине: ${existing.quantity}`);
+        } else {
+            const title = "{{ artwork.title|escapejs }}";
+            const price = parseFloat("{{ artwork.price }}");
+            const image = "{{ artwork.image.url }}";
+            
+            cart.push({
+                id: artworkId,
+                title: title,
+                price: price,
+                image: image,
+                quantity: 1
+            });
+            alert(`Товар "${title}" добавлен в корзину!`);
+        }
+        
+        localStorage.setItem('cart', JSON.stringify(cart));
+        console.log('Корзина обновлена:', cart);
+        
+        // Обновляем кнопку
+        const button = document.querySelector('button[onclick*="addToCart"]');
+        if (button) {
+            button.textContent = 'Добавлено в корзину!';
+            button.disabled = true;
+            button.style.opacity = '0.6';
+        }
+    }
+}
+</script>
+
+
+        
+
+    <script>
+    function like(artworkId) {
+        fetch('/artworks/' + artworkId + '/like/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'artwork_id=' + encodeURIComponent(artworkId),
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())  
+        .then(data => {
+            if (data.status === 'success') {
+                const icon = document.getElementById('like-icon');
+                if (data.created) {
+                    icon.src = "{% static 'img/full_heart.png' %}";
+                } else {
+                    icon.src = "{% static 'img/empty_heart.png' %}";
+                }
+            } else {
+                alert(data.message || 'Ошибка');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка при лайке:', error);
+        });
+    }
+    </script>
+
+        
     </div>
 </div>
 
-<!-- Стили для кнопок -->
 <style>
+    div[onclick="like('{{ artwork.id }}')"]:hover {
+    opacity: 0.8;
+    transform: scale(1.05);
+    transition: all 0.2s ease;
+}
     .like-btn:hover {
         background: #45a049 !important;
     }

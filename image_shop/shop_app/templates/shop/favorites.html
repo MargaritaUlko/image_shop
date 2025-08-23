@@ -1,0 +1,93 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% load math_filters %}
+
+
+
+{% block content %}
+<h1>Избранное</h1>
+
+{% if artworks %}
+<div class="cart-container">
+    {% for item in artworks %}
+    <div id="artwork-{{ item.artwork.id }}" class="favorite-item">
+        <a href="{% url 'artwork_detail' item.artwork.id %}">
+            <div class="cart-item">
+                <div class="cart-item-image-container">
+                    <img src="{{ item.artwork.image.url }}" width="100" class="artwork-image">
+                </div>
+                <div class="item-info">
+                    <h3>{{ item.artwork.title }}</h3>
+                    <p>Художник: {{ item.artwork.artist }}</p>
+                    <p>Цена: {{ item.artwork.price }} руб.</p>
+                </div>
+            </div>
+        </a>
+    </div> 
+
+    <button type="button" class="btn btn-danger" onclick="removeFromFavorites('{{ item.artwork.id }}')">Удалить</button>
+
+
+
+    {% endfor %}
+    
+    <div class="cart-total">
+        <h3>Итого: {{ total }} руб.</h3>
+        <a href="{% url 'checkout' %}" class="checkout-btn">Оформить заказ</a>
+    </div>
+    <a href="{% url 'artwork_recommendations' %}" style="margin-left: 15px; padding: 8px 15px; background: #2196F3; color: white; text-decoration: none; border-radius: 4px;">
+        Посмотреть рекомендации
+    </a>
+</div>
+{% else %}
+<p>Ваша корзина пуста</p>
+<a href="{% url 'artwork_list' %}" class="back-btn">Вернуться в галерею</a>
+{% endif %}
+<script>
+function removeFromFavorites(artworkId) {
+    fetch('/artworks/' + artworkId + '/remove_like/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('HTTP error! status: ' + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            const itemElement = document.getElementById('artwork-' + artworkId);
+            if (itemElement) {
+                itemElement.remove();
+                // alert('Удалено из избранного!');
+                
+                checkIfCartEmpty();
+            }
+        } else {
+            alert(data.message || 'Ошибка');
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка при удалении:', error);
+        alert('Произошла ошибка при удалении: ' + error.message);
+    });
+}
+
+function checkIfCartEmpty() {
+    const items = document.querySelectorAll('.favorite-item');
+    if (items.length === 0) {
+        document.querySelector('.cart-container').innerHTML = `
+            <p>Ваша корзина пуста</p>
+            <a href="{% url 'artwork_list' %}" class="back-btn">Вернуться в галерею</a>
+        `;
+    }
+}
+</script>
+{% endblock %}
+

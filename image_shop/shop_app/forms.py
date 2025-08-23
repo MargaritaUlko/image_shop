@@ -36,8 +36,9 @@ class RegisterForm(UserCreationForm):
 
 
 class AddToCartForm(forms.Form):
-    """Пустая форма для CSRF-защиты"""
-    pass
+    class Meta:
+        model = CartItem
+        
 
 class OrderForm(forms.ModelForm):
     class Meta:
